@@ -24,7 +24,7 @@ import com.google.gson.Gson;
 @Path("/")
 public class API {
 	
-	private static final String indexhtml;
+	private static final String indexhtml; 
 	static {
 		System.out.println("Loading index.html");
 		StringBuilder sb = new StringBuilder();
