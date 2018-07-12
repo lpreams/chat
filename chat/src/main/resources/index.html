@@ -1,0 +1,80 @@
+<html>
+<head>
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+</head>
+<body>
+<h1>Chat</h1>
+<form autocomplete="off" id="mychatform" action="asdf" method="post">
+	<p>Username: <input id="username" type=text name="username"></input></p>
+	<p>Input: <input id="input" type=text name="input" rows=100></input></p>
+	<input type="submit" value="Submit" />
+</form>
+<div id="chatwindow">
+
+</div>
+
+<script>
+possibleidchars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+makeid=length=>{
+  var id = "";
+  for (var i = 0; i < length; i++) id += possibleidchars.charAt(Math.floor(Math.random() * possibleidchars.length));
+  return id;
+}
+printmessage=(un,txt,dt)=>{
+	var options = { /*weekday: 'long',*/ year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' };
+	//var dateString = dt.toLocaleDateString(options);
+	//var dateString = Intl.DateTimeFormat(options).format(dt);
+	var hour = dt.getHours();
+	if (hour < 10) hour = "0"+hour;
+	var min = dt.getMinutes();
+	if (min < 10) min = "0"+min;
+	var sec = dt.getSeconds();
+	if (sec < 10) sec = "0"+sec;
+	$("#chatwindow").prepend("<p>" + ("["+hour+":"+min+":"+sec+"] &lt;" + un + "&gt; " + txt) + "</p>");
+}
+chatid = makeid(64);
+
+chatupdate=()=>{
+	var req = new XMLHttpRequest();
+	req.open("GET","/update?chatid=" + encodeURIComponent(chatid) + "&timestamp=" + encodeURIComponent(lastupdate),true);
+	req.onload = function() {
+		var res = JSON.parse(req.responseText);
+		lastupdate = res.time;
+		for (var i=0; i<res.messages.length; ++i) {
+			var dt = new Date(0);
+			dt.setUTCSeconds(res.messages[i].time/1000);
+			printmessage(res.messages[i].username,res.messages[i].message,dt);
+		}
+	};
+	req.send();
+};
+
+$(document).ready(chatupdate);
+
+$("#mychatform").submit(function() {
+	var username = $("#username").val();
+	if (username.length === 0) {
+		alert("You must set a username");
+		return false;
+	}
+	var input = $("#input").val();
+	if (input.length === 0) {
+		alert("You cannot send an empty message");
+		return false;
+	}
+	var req = new XMLHttpRequest();
+	req.open( "POST", "/submit", true );
+	req.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+	req.onload = function() {
+		//$("#chatwindow").prepend("<p>[" + username + "] " + input + "</p>");
+		//printmessage(username, input, new Date());
+		$("#input").val("");
+	};
+	req.send("username="+encodeURIComponent(username)+"&input="+encodeURIComponent(input)+"&chatid="+encodeURIComponent(chatid));
+	return false;
+});
+var lastupdate = -1;
+window.setInterval(chatupdate,1000);
+</script>
+</body>
+</html>
